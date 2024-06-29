@@ -1,66 +1,66 @@
-def create_table(pattern: str) -> dict:
-    shift_table: dict = {}
-    
-    for idx,letter in enumerate(pattern):
-        shift_table[letter] = len(pattern) - idx - 1
-        if idx == len(pattern) - 1:
-            shift_table[letter] = len(pattern)
-    
-    shift_table['*'] = len(pattern)
+from collections import defaultdict
+from typing import Dict
 
+def create_table(pattern: str) -> Dict[str, int]:
+    """
+    Create the bad character shift table used in Boyer-Moore string search algorithm.
+    
+    Args:
+    - pattern (str): The pattern to search for.
+    
+    Returns:
+    - dict: A dictionary where the keys are characters and values are the shift lengths.
+    """
+    shift_table: Dict[str, int] = defaultdict(lambda: len(pattern))
+    
+    for idx, letter in enumerate(pattern[:-1]):
+        shift_table[letter] = len(pattern) - idx - 1
+    
+    shift_table[pattern[-1]] = len(pattern)
+    shift_table['*'] = len(pattern)
+    
     return shift_table
 
-def match_Pattern(text: str, pattern: str, table: dict) -> bool:
-    idx: int = -1
-    currentTextPos: int = len(pattern) - 1
-    prev_match: bool = False 
-
-    while currentTextPos <= len(text):
-        if pattern[idx] == text[currentTextPos]:
-            if abs(idx) == len(pattern):
-                return True
+def match_pattern(text: str, pattern: str, table: Dict[str, int]) -> bool:
+    """
+    Check if the pattern exists in the text using the Boyer-Moore algorithm.
+    
+    Args:
+    - text (str): The text to search within.
+    - pattern (str): The pattern to search for.
+    - table (dict): The bad character shift table.
+    
+    Returns:
+    - bool: True if the pattern is found in the text, False otherwise.
+    """
+    pattern_len, text_len = len(pattern), len(text)
+    current_pos: int = pattern_len - 1
+    
+    while current_pos < text_len:
+        idx: int = pattern_len - 1
+        while idx >= 0 and pattern[idx] == text[current_pos - (pattern_len - 1 - idx)]:
             idx -= 1
-            currentTextPos -= 1
-            prev_match = True
-            
-        elif pattern[idx] != text[currentTextPos] and prev_match:
-            currentTextPos = currentTextPos - idx - 1 + len(pattern)
-            idx = -1
-            prev_match = False
-        elif pattern[idx] != text[currentTextPos] and text[currentTextPos] in  table.keys():
-            currentTextPos += table[text[currentTextPos]]
-        else:
-            currentTextPos += len(pattern)
-
+        if idx < 0:
+            return True
+        current_pos += table.get(text[current_pos], table['*'])
+    
     return False
-            
 
 def main() -> None:
-    text: str = "himynameisodessa"
-
-    print(text[-1])
-
-    pattern: str = input("Enter pattern to search: ")
-
+    """
+    Main function to execute the Boyer-Moore string search.
+    """
+    text: str = "i am a genious i ve just coded some serious stuff"
+    trimmed_text: str = "".join(text.strip().lower().split(' '))
+    pattern = input("Enter pattern to search: ").strip()
+    
     table = create_table(pattern)
-    print(table)
-
-    if match_Pattern(text, pattern, table):
-        print(f"{pattern} is presented in text! Woohoo!")
-
-#
-
-#DONE:
-# Take an input 
-# Create a BMT
-# Start comparing from right corner of pattern to text corresmonding letter letter
-# Option 1 : match , compare one to the left
-# If mismatch shift right by lenght
-#Option 2: direct mismatch -> shift right by value of mismatched letter or *
-
-#TODO:
-#Output text with coloured pattern
-
+    print("Shift Table:", table)
+    
+    if match_pattern(trimmed_text, pattern, table):
+        print(f"'{pattern}' is present in the text! Woohoo!")
+    else:
+        print(f"'{pattern}' is not present in the text.")
 
 if __name__ == "__main__":
     main()
